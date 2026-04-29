@@ -1,11 +1,37 @@
 import express, { type Express } from "express";
+import "dotenv/config";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import cookieSession from "cookie-session";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
+import helmet from "helmet";
+import { checkRateLimit } from "./lib/redis/rate-limit";
+
 const app: Express = express();
+
+// Security Hardening
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP in dev to avoid blocking MediaPipe/ONNX
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  crossOriginEmbedderPolicy: false, // Required for SharedArrayBuffer in some environments
+}));
+app.use(cors({ 
+  origin: process.env.CLIENT_URL || true, 
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+}));
+
+// Global Rate Limit Middleware for Auth
+app.use('/api/auth', async (req, res, next) => {
+  const identifier = req.ip || 'anonymous';
+  const result = await checkRateLimit(identifier);
+  if (!result.success) {
+    return res.status(429).json({ error: 'Too many requests' });
+  }
+  next();
+});
 
 app.use(
   pinoHttp({
@@ -28,7 +54,6 @@ app.use(
 );
 
 app.set("trust proxy", 1);
-app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -43,6 +68,30 @@ app.use(
     httpOnly: true,
     sameSite: "lax",
     secure: process.env["NODE_ENV"] === "production",
+  }),
+);
+
+// Session Debug Logging
+app.use((req, res, next) => {
+  const session = (req as any).session;
+  logger.info({ 
+    path: req.path, 
+    hasSession: !!session, 
+    userId: session?.userId,
+    cookies: req.headers.cookie ? 'present' : 'absent'
+  }, "Session Debug");
+  next();
+});
+
+import * as trpcExpress from '@trpc/server/adapters/express';
+import { appRouter } from './routers/_app';
+import { createContext } from './trpc';
+
+app.use(
+  '/trpc',
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+    createContext,
   }),
 );
 

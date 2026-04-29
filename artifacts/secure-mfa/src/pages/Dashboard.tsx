@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { 
   ShieldCheck, LogOut, Eye, EyeOff, AlertTriangle, ShieldAlert,
-  Clock, CheckCircle2, User as UserIcon, Calendar, Fingerprint, ScanFace
+  Clock, CheckCircle2, User as UserIcon, Calendar, Fingerprint, ScanFace, Share2
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -19,6 +19,7 @@ import { BiometricButton } from "@/components/BiometricButton";
 import { HandoffQR } from "@/components/HandoffQR";
 import { Smartphone, Monitor } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useLanguage, LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 import {
   useGetMe,
@@ -35,6 +36,7 @@ import {
 import { humanizeActivity } from "@/lib/humanizeActivity";
 
 export default function Dashboard() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [showAadhaar, setShowAadhaar] = useState(false);
   const [enrollModal, setEnrollModal] = useState<"face" | "biometric" | null>(null);
@@ -117,18 +119,20 @@ export default function Dashboard() {
   const isFullySecured = security.faceEnrolled && security.biometricEnrolled;
 
   return (
-    <div className="min-h-[100dvh] bg-muted/20 pb-20">
-      <header className="border-b bg-background sticky top-0 z-30">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+    <div className="min-h-[100dvh] bg-background flex flex-col">
+      <header className="border-b border-white/5 bg-background/50 backdrop-blur-xl sticky top-0 z-40">
+        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <Logo />
           <div className="flex items-center gap-4">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium leading-none">{user.fullName}</p>
-              <p className="text-xs text-muted-foreground">{user.email}</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={handleLogout} disabled={logout.isPending}>
+            <LanguageSwitcher />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLogout}
+              className="text-muted-foreground hover:text-destructive transition-colors"
+            >
               <LogOut className="w-4 h-4 mr-2" />
-              Sign out
+              {t("dash.sign_out")}
             </Button>
           </div>
         </div>
@@ -142,7 +146,9 @@ export default function Dashboard() {
             <ShieldCheck className="w-48 h-48" />
           </div>
           <div className="relative z-10">
-            <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome back, {firstName}</h1>
+            <h1 className="text-3xl font-bold tracking-tight mb-2">
+              {t("dash.welcome_back", { name: firstName })}
+            </h1>
             <div className="flex items-center gap-2 text-primary-foreground/80 mb-6">
               <span className="font-mono bg-primary-foreground/10 px-3 py-1 rounded-md tracking-widest text-sm">
                 {showAadhaar ? "XXXX XXXX " + user.aadhaarMasked.slice(-4) : "XXXX XXXX XXXX"}
@@ -172,7 +178,7 @@ export default function Dashboard() {
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-secondary" />
-                  Security Status
+                  {t("dash.security")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -180,14 +186,14 @@ export default function Dashboard() {
                   <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
                     <CheckCircle2 className="w-5 h-5 text-secondary shrink-0" />
                     <div>
-                      <p className="text-sm font-medium">Email Verified</p>
+                      <p className="text-sm font-medium">{t("dash.email_verified")}</p>
                       <p className="text-xs text-muted-foreground">{security.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
                     <CheckCircle2 className="w-5 h-5 text-secondary shrink-0" />
                     <div>
-                      <p className="text-sm font-medium">MPIN Active</p>
+                      <p className="text-sm font-medium">{t("dash.mpin_active")}</p>
                       <p className="text-xs text-muted-foreground">Used for fallback access</p>
                     </div>
                   </div>
@@ -198,9 +204,9 @@ export default function Dashboard() {
                       <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
                     )}
                     <div>
-                      <p className="text-sm font-medium">Face Enrolled</p>
+                      <p className="text-sm font-medium">{t("dash.face_enrolled")}</p>
                       <p className="text-xs text-muted-foreground">
-                        {security.faceEnrolled ? "Active" : "Action required"}
+                        {security.faceEnrolled ? t("dash.active") : t("dash.action_required")}
                       </p>
                     </div>
                   </div>
@@ -211,9 +217,9 @@ export default function Dashboard() {
                       <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
                     )}
                     <div>
-                      <p className="text-sm font-medium">Device Biometrics</p>
+                      <p className="text-sm font-medium">{t("dash.biometric_enrolled")}</p>
                       <p className="text-xs text-muted-foreground">
-                        {security.biometricEnrolled ? `${security.biometricCount} device(s)` : "Action required"}
+                        {security.biometricEnrolled ? `${security.biometricCount} device(s)` : t("dash.action_required")}
                       </p>
                     </div>
                   </div>
@@ -224,21 +230,21 @@ export default function Dashboard() {
                     <div>
                       <h4 className="font-semibold text-amber-900 dark:text-amber-500 flex items-center gap-2">
                         <ShieldAlert className="w-4 h-4" />
-                        Strengthen your security
+                        {t("dash.strengthen_security")}
                       </h4>
                       <p className="text-sm text-amber-700 dark:text-amber-600 mt-1">
-                        Enroll missing factors to ensure maximum protection of your vault.
+                        {t("dash.strengthen_desc")}
                       </p>
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
                       {!security.faceEnrolled && (
                         <Button variant="outline" size="sm" className="bg-white hover:bg-amber-50 dark:bg-background" onClick={() => setEnrollModal("face")}>
-                          Enroll Face
+                          {t("dash.enroll_face")}
                         </Button>
                       )}
                       {!security.biometricEnrolled && (
                         <Button variant="outline" size="sm" className="bg-white hover:bg-amber-50 dark:bg-background" onClick={() => setEnrollModal("biometric")}>
-                          Add Device
+                          {t("dash.add_device")}
                         </Button>
                       )}
                     </div>
@@ -252,25 +258,25 @@ export default function Dashboard() {
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <UserIcon className="w-5 h-5 text-primary" />
-                  Account Details
+                  {t("dash.account_details")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="grid grid-cols-3 py-3 border-b">
-                    <span className="text-sm text-muted-foreground">Full Name</span>
+                    <span className="text-sm text-muted-foreground">{t("dash.full_name")}</span>
                     <span className="text-sm font-medium col-span-2">{user.fullName}</span>
                   </div>
                   <div className="grid grid-cols-3 py-3 border-b">
-                    <span className="text-sm text-muted-foreground">Email</span>
+                    <span className="text-sm text-muted-foreground">{t("dash.email")}</span>
                     <span className="text-sm font-medium col-span-2">{user.email}</span>
                   </div>
                   <div className="grid grid-cols-3 py-3 border-b">
-                    <span className="text-sm text-muted-foreground">Aadhaar</span>
+                    <span className="text-sm text-muted-foreground">{t("dash.aadhaar")}</span>
                     <span className="text-sm font-medium col-span-2 font-mono">XXXX XXXX {user.aadhaarMasked.slice(-4)}</span>
                   </div>
                   <div className="grid grid-cols-3 py-3">
-                    <span className="text-sm text-muted-foreground">Member Since</span>
+                    <span className="text-sm text-muted-foreground">{t("dash.member_since")}</span>
                     <span className="text-sm font-medium col-span-2 flex items-center">
                       <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
                       {new Date(user.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -279,13 +285,35 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+
+            <Card className="bg-secondary/5 border-secondary/20">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Share2 className="w-5 h-5 text-secondary" />
+                  {t("dash.verifiable_proofs")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    {t("dash.verifiable_desc")}
+                  </p>
+                </div>
+                <Button asChild variant="secondary" className="shrink-0 gap-2">
+                  <Link href="/re-kyc">
+                    <ShieldCheck className="w-4 h-4" />
+                    {t("dash.generate_proof")}
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Activity Timeline */}
           <div className="md:col-span-1">
             <Card className="h-full">
               <CardHeader>
-                <CardTitle className="text-lg">Recent Activity</CardTitle>
+                <CardTitle className="text-lg">{t("dash.activity")}</CardTitle>
               </CardHeader>
               <CardContent>
                 {activityLoading ? (

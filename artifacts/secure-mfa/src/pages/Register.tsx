@@ -12,9 +12,32 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
-import { ShieldCheck, Loader2, ArrowRight, Mail, Copy, Fingerprint, CheckCircle2, Smartphone, Monitor, Gamepad2 } from "lucide-react";
+import { 
+  Loader2, 
+  Shield, 
+  Lock, 
+  Smartphone, 
+  User, 
+  ScanFace, 
+  CheckCircle2, 
+  ChevronRight, 
+  Fingerprint, 
+  Eye, 
+  EyeOff, 
+  AlertCircle, 
+  Camera, 
+  RefreshCw, 
+  X, 
+  Mail, 
+  ShieldCheck,
+  Copy,
+  Info
+} from "lucide-react";
+import { useNotifications } from "@/components/SystemNotification";
 import { formatAadhaar, unformatAadhaar } from "@/lib/formatAadhaar";
 import { HandoffQR } from "@/components/HandoffQR";
+import { AadhaarCapture } from "@/components/AadhaarCapture";
+import { useLanguage, LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 import {
   useRegisterStart,
@@ -32,6 +55,7 @@ import { useQueryClient } from "@tanstack/react-query";
 const STEPS = ["Email", "OTP", "Phone", "Identity", "Face", "Biometric", "Complete"];
 
 export default function Register() {
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(0);
@@ -53,6 +77,7 @@ export default function Register() {
 
   const [faceEnrolled, setFaceEnrolled] = useState(false);
   const [biometricEnrolled, setBiometricEnrolled] = useState(false);
+  const { showNotification } = useNotifications();
   const [faceMode, setFaceMode] = useState<"device" | "phone">("device");
   const [bioMode, setBioMode] = useState<"device" | "phone">("device");
 
@@ -73,7 +98,13 @@ export default function Register() {
     }
     try {
       const res = await registerStart.mutateAsync({ data: { email } });
-      if (res.demoOtp) setDemoOtp(res.demoOtp);
+      if (res.demoOtp) {
+        showNotification({
+          title: "System Message",
+          message: `Your AuthFusion verification code is ${res.demoOtp}. Do not share this code.`,
+          type: "otp"
+        });
+      }
       setCurrentStep(1);
     } catch (err: any) {
       toast.error(err.message || "Failed to send OTP");
@@ -83,8 +114,13 @@ export default function Register() {
   const handleResendOtp = async () => {
     try {
       const res = await registerStart.mutateAsync({ data: { email } });
-      if (res.demoOtp) setDemoOtp(res.demoOtp);
-      toast.success("OTP resent");
+      if (res.demoOtp) {
+        showNotification({
+          title: "System Message",
+          message: `Your new verification code is ${res.demoOtp}.`,
+          type: "otp"
+        });
+      }
     } catch (err: any) {
       toast.error(err.message || "Failed to resend OTP");
     }
@@ -173,10 +209,11 @@ export default function Register() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-background to-background">
-      <header className="p-6">
+      <header className="p-6 flex items-center justify-between">
         <Link href="/">
           <Logo />
         </Link>
+        <LanguageSwitcher />
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-4">
@@ -190,8 +227,8 @@ export default function Register() {
                 <Card className="border-white/10 shadow-2xl backdrop-blur-xl bg-background/60">
                   <CardContent className="pt-6">
                     <div className="text-center mb-6">
-                      <h2 className="text-2xl font-semibold tracking-tight">Create your AuthFusion Vault</h2>
-                      <p className="text-sm text-muted-foreground mt-2">Enter your email to begin setup.</p>
+                      <h2 className="text-2xl font-semibold tracking-tight">{t("register.title")}</h2>
+                      <p className="text-sm text-muted-foreground mt-2">{t("register.email_desc")}</p>
                     </div>
                     <form onSubmit={handleEmailSubmit} className="space-y-4">
                       <div className="space-y-2">
@@ -208,7 +245,7 @@ export default function Register() {
                       </div>
                       <Button type="submit" className="w-full" disabled={registerStart.isPending}>
                         {registerStart.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Continue
+                        {t("register.continue")}
                       </Button>
                     </form>
                     <div className="text-center mt-6 text-sm">
@@ -235,18 +272,6 @@ export default function Register() {
                       </p>
                     </div>
                     
-                    {demoOtp && (
-                      <div className="mb-6 p-3 bg-secondary/10 border border-secondary/20 rounded-lg flex items-center justify-between">
-                        <span className="text-sm text-secondary font-medium">Demo OTP: {demoOtp}</span>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-secondary hover:text-secondary hover:bg-secondary/20" onClick={() => {
-                          navigator.clipboard.writeText(demoOtp);
-                          toast.success("Copied to clipboard");
-                        }}>
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-
                     <div className="flex flex-col items-center space-y-6">
                       <InputOTP maxLength={6} value={otp} onChange={setOtp} disabled={verifyOtp.isPending}>
                         <InputOTPGroup>
@@ -312,20 +337,38 @@ export default function Register() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="aadhaar">Aadhaar Number</Label>
-                        <Input 
-                          id="aadhaar" 
-                          value={aadhaarDisplay}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, "").slice(0, 12);
-                            setAadhaarDisplay(formatAadhaar(val));
+                        <Label>Aadhaar Identity Verification</Label>
+                        <p className="text-[10px] text-muted-foreground mb-3 leading-tight">
+                          Please capture or upload an image of your Aadhaar card. 
+                          The system will extract your ID automatically for verification.
+                        </p>
+                        
+                        <AadhaarCapture 
+                          onCapture={(num) => {
+                            setAadhaarDisplay(formatAadhaar(num));
                           }}
-                          placeholder="XXXX XXXX XXXX"
-                          required
                         />
-                        <p className="text-[10px] text-muted-foreground flex items-center">
+
+                        {aadhaarDisplay && (
+                          <div className="mt-3 p-3 bg-secondary/5 border border-secondary/20 rounded-lg flex items-center justify-between">
+                            <Input 
+                              value={aadhaarDisplay}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, "").slice(0, 12);
+                                setAadhaarDisplay(formatAadhaar(val));
+                              }}
+                              className="bg-transparent border-none shadow-none font-mono tracking-widest text-secondary p-0 h-auto focus-visible:ring-0"
+                            />
+                            <div className="flex items-center text-[10px] text-secondary font-medium uppercase shrink-0">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Identity Extracted
+                            </div>
+                          </div>
+                        )}
+                        
+                        <p className="text-[10px] text-muted-foreground flex items-center mt-2">
                           <ShieldCheck className="w-3 h-3 mr-1 text-secondary" />
-                          Encrypted with AES-256 at rest
+                          Encrypted with AES-256-GCM at rest
                         </p>
                       </div>
 

@@ -11,9 +11,12 @@ import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
+import ReKYC from "@/pages/ReKYC";
 import MobileHandoff from "@/pages/MobileHandoff";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
+import { NotificationProvider } from "@/components/SystemNotification";
+import { LanguageProvider } from "@/components/LanguageSwitcher";
 
 const queryClient = new QueryClient();
 
@@ -60,22 +63,30 @@ function AppRoutes() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/re-kyc" component={ReKYC} />
       <Route path="/m/h/:token" component={MobileHandoff} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
+import { useBehavioralBiometrics } from "./hooks/useBehavioralBiometrics";
+
 function App() {
+  useBehavioralBiometrics();
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AppRoutes />
-        </WouterRouter>
-        <Toaster />
-        <SonnerToaster richColors position="top-center" />
-      </TooltipProvider>
+      <LanguageProvider>
+        <NotificationProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <AppRoutes />
+            </WouterRouter>
+            <Toaster />
+            <SonnerToaster richColors position="top-center" />
+          </TooltipProvider>
+        </NotificationProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

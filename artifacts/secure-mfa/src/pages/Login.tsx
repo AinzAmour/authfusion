@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Loader2, Fingerprint, ScanFace, ArrowLeft, Smartphone } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { HandoffQR } from "@/components/HandoffQR";
+import { useLanguage, LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 import {
   useLoginLookup,
@@ -27,6 +28,7 @@ import {
 type Factor = "biometric" | "face" | "face_phone" | "biometric_phone";
 
 export default function Login() {
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
@@ -93,10 +95,11 @@ export default function Login() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-background to-background">
-      <header className="p-6 flex justify-center md:justify-start">
+      <header className="p-6 flex items-center justify-between">
         <Link href="/">
           <Logo />
         </Link>
+        <LanguageSwitcher />
       </header>
 
       <main className="flex-1 flex items-center justify-center p-4">
@@ -106,9 +109,9 @@ export default function Login() {
               <motion.div key="stage1" variants={variants} initial="initial" animate="animate" exit="exit">
                 <Card className="border-white/10 shadow-2xl backdrop-blur-xl bg-background/60">
                   <CardContent className="pt-8 pb-8">
-                    <div className="text-center mb-8">
-                      <h1 className="text-2xl font-semibold tracking-tight">Sign in to AuthFusion</h1>
-                      <p className="text-sm text-muted-foreground mt-2">Enter your email and MPIN to continue.</p>
+                    <div className="text-center mb-6">
+                      <h2 className="text-2xl font-semibold tracking-tight">{t("nav.signin")}</h2>
+                      <p className="text-sm text-muted-foreground mt-2">Enter your credentials to access your vault.</p>
                     </div>
 
                     <form onSubmit={handleLookupSubmit} className="space-y-6">

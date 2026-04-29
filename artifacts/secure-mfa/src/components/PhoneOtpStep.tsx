@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNotifications } from "./SystemNotification";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ export function PhoneOtpStep({ onVerified }: PhoneOtpStepProps) {
   const [otp, setOtp] = useState("");
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const { showNotification } = useNotifications();
 
   const generateOtp = () => {
     return String(Math.floor(100000 + Math.random() * 900000));
@@ -37,7 +39,12 @@ export function PhoneOtpStep({ onVerified }: PhoneOtpStepProps) {
     setDemoOtp(code);
     setOtpSent(true);
     setSending(false);
-    toast.success("OTP sent to your phone (mock)");
+    
+    showNotification({
+      title: "Messages",
+      message: `Your AuthFusion mobile verification code is ${code}. valid for 5 mins.`,
+      type: "otp"
+    });
   };
 
   const handleResend = async () => {
@@ -47,7 +54,12 @@ export function PhoneOtpStep({ onVerified }: PhoneOtpStepProps) {
     setDemoOtp(code);
     setOtp("");
     setSending(false);
-    toast.success("OTP resent");
+
+    showNotification({
+      title: "Messages",
+      message: `New code: ${code}`,
+      type: "otp"
+    });
   };
 
   const hasStartedVerification = useRef(false);
@@ -146,23 +158,6 @@ export function PhoneOtpStep({ onVerified }: PhoneOtpStepProps) {
           <span className="font-medium text-foreground">+91 {phone}</span>
         </p>
       </div>
-
-      {demoOtp && (
-        <div className="p-3 bg-secondary/10 border border-secondary/20 rounded-lg flex items-center justify-between">
-          <span className="text-sm text-secondary font-medium">Demo OTP: {demoOtp}</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-secondary hover:text-secondary hover:bg-secondary/20"
-            onClick={() => {
-              navigator.clipboard.writeText(demoOtp);
-              toast.success("Copied to clipboard");
-            }}
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
 
       <div className="flex flex-col items-center space-y-6">
         <InputOTP maxLength={6} value={otp} onChange={setOtp} disabled={verifying}>
