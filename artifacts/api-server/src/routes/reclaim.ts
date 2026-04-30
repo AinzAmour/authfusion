@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Reclaim } from "@reclaimprotocol/js-sdk";
+import { verifyProof } from "@reclaimprotocol/js-sdk";
 import { db } from "@workspace/db";
 import { verifiableCredentialsTable, riskEventsTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
@@ -14,7 +14,8 @@ router.use("/verify", async (req, res, next) => {
   const identifier = req.ip || 'anonymous';
   const result = await checkRateLimit(`reclaim_verify_${identifier}`);
   if (!result.success) {
-    return res.status(429).json({ error: 'Too many verification attempts' });
+    res.status(429).json({ error: 'Too many verification attempts' });
+    return;
   }
   next();
 });
@@ -25,15 +26,17 @@ const APP_SECRET = process.env.VITE_RECLAIM_APP_SECRET || "YOUR_APP_SECRET";
 
 router.post("/verify", async (req, res) => {
   const { proof } = req.body;
-  const userId = req.session.userId;
+  const userId = req.session?.userId;
 
   if (!userId) {
-    return res.status(401).json({ message: "Unauthorized" });
+    res.status(401).json({ message: "Unauthorized" });
+    return;
   }
 
   console.log("RECLAIM_VERIFY_REQUEST:", { userId, proof: !!proof });
   if (!proof) {
-    return res.status(400).json({ message: "Proof missing" });
+    res.status(400).json({ message: "Proof missing" });
+    return;
   }
 
   try {
@@ -79,10 +82,12 @@ router.post("/verify", async (req, res) => {
     console.log("Verifying Reclaim proof with SDK...");
     let isVerified = false;
     try {
-      isVerified = await Reclaim.verifySignedProof(proof);
+      const verificationResult = await verifyProof(proof, { dangerouslyDisableContentValidation: true });
+      isVerified = verificationResult.isVerified;
     } catch (sdkError: any) {
       console.error("Reclaim SDK Verification Error:", sdkError);
-      return res.status(400).json({ error: `SDK Verification Error: ${sdkError.message}` });
+      res.status(400).json({ error: `SDK Verification Error: ${sdkError.message}` });
+      return;
     }
 
     if (!isVerified) {
@@ -94,7 +99,8 @@ router.post("/verify", async (req, res) => {
         severity: "medium",
         metadata: { ip: req.ip, timestamp: new Date().toISOString() }
       });
-      return res.status(400).json({ error: "Invalid proof signature. The proof may have been tampered with or is invalid." });
+      res.status(400).json({ error: "Invalid proof signature. The proof may have been tampered with or is invalid." });
+      return;
     }
 
     console.log("Reclaim proof verified successfully.");

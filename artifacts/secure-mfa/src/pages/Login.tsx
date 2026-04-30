@@ -195,7 +195,7 @@ export default function Login() {
                     <div className="space-y-4">
                       {selectedFactor === "face" ? (
                         <div className="animate-in fade-in zoom-in duration-300">
-                          <FaceCapture onDescriptor={handleFaceSuccess} mode="auth" className="w-full max-w-[240px] mx-auto aspect-square mb-4" />
+                          <FaceCapture onDescriptor={handleFaceSuccess} mode="verify" className="w-full max-w-[240px] mx-auto aspect-square mb-4" />
                           <Button variant="ghost" onClick={() => setSelectedFactor(null)} className="text-muted-foreground">
                             Cancel
                           </Button>

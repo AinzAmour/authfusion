@@ -1,3 +1,4 @@
+// @ts-ignore
 import * as snarkjs from 'snarkjs'
 
 export interface ZKProof {

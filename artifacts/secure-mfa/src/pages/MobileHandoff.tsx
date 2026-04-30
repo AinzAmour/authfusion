@@ -183,7 +183,7 @@ export default function MobileHandoff() {
               <>
                 <FaceCapture
                   onDescriptor={handleFaceDescriptor}
-                  mode={isLogin ? "auth" : "enroll"}
+                  mode={isLogin ? "verify" : "enroll"}
                   className="w-full aspect-square"
                 />
                 <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">

@@ -4,7 +4,12 @@ import { detectChallenge, type Challenge } from '@/lib/liveness/challenges'
 import type { FaceLandmarker } from '@mediapipe/tasks-vision'
 
 const CHALLENGES: Challenge[] = ['smile', 'blink', 'turn_left', 'turn_right']
-const STABILITY_THRESHOLD = 8 // Number of consecutive frames the challenge must be held
+const STABILITY_THRESHOLD = 8 // Default consecutive frames required
+
+function requiredStability(challenge: Challenge): number {
+  if (challenge === 'blink') return 2
+  return STABILITY_THRESHOLD
+}
 
 export function useLiveness() {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -15,6 +20,7 @@ export function useLiveness() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const stabilityCounterRef = useRef(0)
+  const loadingRef = useRef(false)
 
   const stop = useCallback(() => {
     if (rafRef.current) {
@@ -30,7 +36,8 @@ export function useLiveness() {
 
   const start = useCallback(async () => {
     // Prevent multiple starts
-    if (loading) return
+    if (loadingRef.current) return
+    loadingRef.current = true
     stop()
     
     setLoading(true)
@@ -64,9 +71,10 @@ export function useLiveness() {
       console.error("Liveness Start Error:", err)
       setError(err instanceof Error ? err.message : 'Camera access denied')
     } finally {
+      loadingRef.current = false
       setLoading(false)
     }
-  }, [loading, stop])
+  }, [stop])
 
   const runLoop = useCallback((challenge: Challenge) => {
     const video = videoRef.current
@@ -79,7 +87,7 @@ export function useLiveness() {
         if (detectChallenge(result, challenge)) {
           stabilityCounterRef.current += 1
           
-          if (stabilityCounterRef.current >= STABILITY_THRESHOLD) {
+          if (stabilityCounterRef.current >= requiredStability(challenge)) {
             cancelAnimationFrame(rafRef.current)
             rafRef.current = 0
             setPassed(true)

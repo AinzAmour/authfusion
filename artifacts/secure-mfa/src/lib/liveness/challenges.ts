@@ -19,37 +19,46 @@ export function detectChallenge(
   if (!result.faceBlendshapes?.length) return false
 
   switch (challenge) {
-    case 'smile':
-      return getBlendShape(result, 'mouthSmileLeft') > 0.6 &&
-             getBlendShape(result, 'mouthSmileRight') > 0.6
+    case 'smile': {
+      const smileLeft = getBlendShape(result, 'mouthSmileLeft')
+      const smileRight = getBlendShape(result, 'mouthSmileRight')
+      return smileLeft > 0.6 && smileRight > 0.6
+    }
 
-    case 'blink':
-      return getBlendShape(result, 'eyeBlinkLeft') > 0.7 &&
-             getBlendShape(result, 'eyeBlinkRight') > 0.7
+    case 'blink': {
+      const blinkLeft = getBlendShape(result, 'eyeBlinkLeft')
+      const blinkRight = getBlendShape(result, 'eyeBlinkRight')
+      const threshold = 0.55
+      return blinkLeft > threshold && blinkRight > threshold
+    }
 
     case 'turn_left': {
       const landmarks = result.faceLandmarks?.[0]
       if (!landmarks) return false
       // Use landmark 33 (nose tip) vs 263 (left cheek) horizontal delta
-      return (landmarks[33].x - landmarks[263].x) > 0.08
+      const delta = landmarks[33].x - landmarks[263].x
+      return delta > 0.08
     }
 
     case 'turn_right': {
       const landmarks = result.faceLandmarks?.[0]
       if (!landmarks) return false
-      return (landmarks[263].x - landmarks[33].x) > 0.08
+      const delta = landmarks[263].x - landmarks[33].x
+      return delta > 0.08
     }
 
     case 'look_up': {
       const landmarks = result.faceLandmarks?.[0]
       if (!landmarks) return false
-      return (landmarks[10].y - landmarks[152].y) < -0.2
+      const delta = landmarks[10].y - landmarks[152].y
+      return delta < -0.2
     }
 
     case 'look_down': {
       const landmarks = result.faceLandmarks?.[0]
       if (!landmarks) return false
-      return (landmarks[152].y - landmarks[10].y) > 0.2
+      const delta = landmarks[152].y - landmarks[10].y
+      return delta > 0.2
     }
 
     default:

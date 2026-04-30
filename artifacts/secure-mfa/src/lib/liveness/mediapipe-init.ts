@@ -19,7 +19,7 @@ export async function initFaceLandmarker(): Promise<FaceLandmarker> {
         'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm'
       )
 
-      faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+      faceLandmarker = (await FaceLandmarker.createFromOptions(filesetResolver, {
         baseOptions: {
           modelAssetPath:
             'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
@@ -28,7 +28,7 @@ export async function initFaceLandmarker(): Promise<FaceLandmarker> {
         outputFaceBlendshapes: true,
         runningMode: 'VIDEO',
         numFaces: 1,
-      })
+      })) as any as FaceLandmarker
       return faceLandmarker
     })()
 

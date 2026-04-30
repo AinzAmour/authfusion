@@ -8,7 +8,7 @@ let session: ort.InferenceSession | null = null
 export async function initONNXRiskScorer(modelPath: string): Promise<void> {
   // Use GPU if WebGPU is available, else WASM
   const executionProviders: ort.InferenceSession.ExecutionProviderConfig[] =
-    navigator.gpu ? ['webgpu', 'wasm'] : ['wasm']
+    (navigator as any).gpu ? ['webgpu', 'wasm'] : ['wasm']
 
   session = await ort.InferenceSession.create(modelPath, {
     executionProviders,

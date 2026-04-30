@@ -137,7 +137,7 @@ export function TicTacToeCaptcha({ onPass }: TicTacToeCaptchaProps) {
 
   const cellVariants = {
     hidden: { scale: 0, opacity: 0 },
-    visible: { scale: 1, opacity: 1, transition: { type: "spring", stiffness: 400, damping: 15 } },
+    visible: { scale: 1, opacity: 1, transition: { type: "spring" as const, stiffness: 400, damping: 15 } },
   };
 
   return (

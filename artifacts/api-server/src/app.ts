@@ -1,5 +1,16 @@
 import express, { type Express } from "express";
 import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Try to load from current dir and root
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+
 import cors from "cors";
 import pinoHttp from "pino-http";
 import cookieSession from "cookie-session";
@@ -28,7 +39,8 @@ app.use('/api/auth', async (req, res, next) => {
   const identifier = req.ip || 'anonymous';
   const result = await checkRateLimit(identifier);
   if (!result.success) {
-    return res.status(429).json({ error: 'Too many requests' });
+    res.status(429).json({ error: 'Too many requests' });
+    return;
   }
   next();
 });

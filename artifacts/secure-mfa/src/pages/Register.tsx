@@ -31,7 +31,9 @@ import {
   Mail, 
   ShieldCheck,
   Copy,
-  Info
+  Info,
+  ArrowRight,
+  Monitor
 } from "lucide-react";
 import { useNotifications } from "@/components/SystemNotification";
 import { formatAadhaar, unformatAadhaar } from "@/lib/formatAadhaar";
