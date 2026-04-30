@@ -48,7 +48,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 5000000, // 5MB for WASM/MediaPipe
+        maximumFileSizeToCacheInBytes: 50000000, // 50MB for large WASM/MediaPipe/ONNX models
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}']
       }
     }),
