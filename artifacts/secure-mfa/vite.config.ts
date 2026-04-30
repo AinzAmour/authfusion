@@ -6,6 +6,7 @@ import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 const rawPort = process.env.PORT || "5173";
 const port = Number(rawPort);
@@ -22,6 +23,7 @@ export default defineConfig({
     react(),
     wasm(),
     topLevelAwait(),
+    nodePolyfills(),
     tailwindcss(),
     runtimeErrorOverlay(),
     VitePWA({
