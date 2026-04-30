@@ -421,8 +421,31 @@ router.post("/auth/login/lookup", async (req, res) => {
     res.status(401).json({ error: "Invalid email or MPIN" });
     return;
   }
+
+  // Check if user is locked out
+  if (user.mpinLockedUntil && user.mpinLockedUntil > new Date()) {
+    const diff = Math.ceil((user.mpinLockedUntil.getTime() - Date.now()) / 60000);
+    res.status(403).json({ 
+      error: `Too many invalid attempts. Account locked for ${diff} minutes.`,
+      lockedUntil: user.mpinLockedUntil
+    });
+    return;
+  }
+
   const ok = await verifySecret(mpin, user.mpinHash);
   if (!ok) {
+    // Increment attempts
+    const newAttempts = user.mpinAttempts + 1;
+    let mpinLockedUntil = user.mpinLockedUntil;
+
+    if (newAttempts >= 3) {
+      mpinLockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    }
+
+    await db.update(usersTable)
+      .set({ mpinAttempts: newAttempts, mpinLockedUntil })
+      .where(eq(usersTable.id, user.id));
+
     await logActivity({
       userId: user.id,
       email,
@@ -431,9 +454,19 @@ router.post("/auth/login/lookup", async (req, res) => {
       success: false,
       ipAddress: getIp(req),
     });
-    res.status(401).json({ error: "Invalid email or MPIN" });
+    
+    if (newAttempts >= 3) {
+      res.status(403).json({ error: "Too many invalid attempts. Account locked for 15 minutes." });
+    } else {
+      res.status(401).json({ error: `Invalid MPIN. ${3 - newAttempts} attempts remaining.` });
+    }
     return;
   }
+
+  // Reset attempts on successful MPIN check
+  await db.update(usersTable)
+    .set({ mpinAttempts: 0, mpinLockedUntil: null })
+    .where(eq(usersTable.id, user.id));
 
   const creds = await db
     .select()

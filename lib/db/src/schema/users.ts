@@ -18,6 +18,8 @@ export const usersTable = pgTable("users", {
   faceDescriptor: jsonb("face_descriptor").$type<number[] | null>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+  mpinAttempts: integer("mpin_attempts").notNull().default(0),
+  mpinLockedUntil: timestamp("mpin_locked_until", { withTimezone: true }),
 });
 
 export type User = typeof usersTable.$inferSelect;
